@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
-
 import streamlit as st
 from pathlib import Path
 from requests_html import HTML
@@ -11,6 +9,9 @@ import networkx as nx
 from pyvis.network import Network
 import base64
 
+
+use_tag = False
+use_index = False
 
 def load_data(working_dir, restrict=True):
     
@@ -47,16 +48,36 @@ def load_data(working_dir, restrict=True):
     def load_toc_html(toc_html): # if generate Table of Contents manually
         toc_dict = extract_evernote_title_link_from_html(toc_html)
         return toc_dict
+
+    def load_toc_html_from_index(toc_html):
+        print("use auto index.html")
+        html = get_html_content_from_html(toc_html)
+
+        mydict = {}
+        try:
+            for item in html.find('a'):
+                text = item.text
+                link = list(item.links)[0]
+                if not link in mydict:
+                    mydict[link] = text
+        except:
+            pass
+
+        return mydict
     
     def load_toc():
         toc_tsv_file = working_dir / "mydict.txt"
         toc_html_file = working_dir / "Table of Contents.html"
+        index_html_file = working_dir / "index.html"
 
         if toc_tsv_file.exists(): # if use applescript out the note title link pair file
             toc_dict = load_toc_tsv(toc_tsv_file)
             return toc_dict
-        elif toc_html_file.exists(): # if generate Table of Contents manually
+        elif not use_index and toc_html_file.exists(): # if generate Table of Contents manually
             toc_dict = load_toc_html(toc_html_file)
+            return toc_dict
+        elif index_html_file.exists():
+            toc_dict = load_toc_html_from_index(index_html_file)
             return toc_dict
         else:
             print("No TOC file found!")
@@ -175,7 +196,12 @@ st.title("Visualization of Notes")
 
 working_dir = st.sidebar.text_input("choose data path")
 restrict = not st.sidebar.checkbox("Show note outside the notebook")
+use_tag = st.sidebar.checkbox("use tag generate graph")
+use_index = st.sidebar.checkbox("use index outline")
 get_subgraph = st.sidebar.checkbox("Get subgraph")
+
+print(working_dir,restrict,use_tag,get_subgraph, use_index)
+
 if get_subgraph:
     query_term = st.sidebar.text_input("Title to query")
 if st.sidebar.button('analyze now'):
@@ -193,6 +219,7 @@ if st.sidebar.button('analyze now'):
     pyvis_graph = build_and_display_pyvis_graph(nx_graph, link_title_dict, link_content_dict, node_shape_dict=pageranks)
 
     pyvis_graph.show(output_html)
+
     with open(output_html) as f:
         data = f.read()
     b64 = base64.b64encode(data.encode()).decode()  # some strings <-> bytes conversions necessary here
