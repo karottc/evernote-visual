@@ -197,5 +197,5 @@ if st.sidebar.button('analyze now'):
         data = f.read()
     b64 = base64.b64encode(data.encode()).decode()  # some strings <-> bytes conversions necessary here
     href = f'<a href="data:text/html;base64,{b64}">Download HTML File</a> (right-click and choose \"save as\")'
-
+    st.markdown(href, unsafe_allow_html=True)
 
