@@ -9,13 +9,7 @@ from requests_html import HTML
 import pandas as pd
 import networkx as nx
 from pyvis.network import Network
-import pyvis.network as net
 import base64
-import shutil
-from zipfile import ZipFile
-
-
-
 
 
 def load_data(working_dir, restrict=True):
@@ -179,50 +173,29 @@ def query_subgraph(nx_graph, query_term, title_link_dict):
 
 st.title("Visualization of Notes")
 
-# uploaded_file = st.sidebar.file_uploader("Choose zip file of exported notes folder", type="zip")
+working_dir = st.sidebar.text_input("choose data path")
+restrict = not st.sidebar.checkbox("Show note outside the notebook")
+get_subgraph = st.sidebar.checkbox("Get subgraph")
+if get_subgraph:
+    query_term = st.sidebar.text_input("Title to query")
+if st.sidebar.button('analyze now'):
+    working_dir = Path(working_dir)
+    print("working_dir", working_dir)
+    link_title_dict, title_link_dict, link_content_dict, connections = load_data(working_dir, restrict=restrict)
+    nx_graph = build_nx_graph(connections, link_title_dict)
+    pageranks = nx.pagerank(nx_graph)
 
+    output_html = "all-output.html"
+    if get_subgraph and query_term:
+        nx_graph = query_subgraph(nx_graph, query_term, title_link_dict)
+        output_html = query_term + "-output.html"
 
+    pyvis_graph = build_and_display_pyvis_graph(nx_graph, link_title_dict, link_content_dict, node_shape_dict=pageranks)
 
-# if uploaded_file is not None:
-if True:
-
-    working_dir = st.sidebar.text_input("choose data path")
-    restrict = not st.sidebar.checkbox("Show note outside the notebook")
-    get_subgraph = st.sidebar.checkbox("Get subgraph")
-    if get_subgraph:
-        query_term = st.sidebar.text_input("Title to query")
-    if st.sidebar.button('analyze now'):
-
-        # extract_path = 'extracted'
-        # if Path(extract_path).exists():
-        #     shutil.rmtree(extract_path)
-        # print(Path.cwd())
-        # with ZipFile(uploaded_file, 'r') as zipObj:
-        # # Extract all the contents of zip file in current directory
-        #     zipObj.extractall(extract_path)
-        # working_list = list(Path(extract_path).glob("*"))
-        # for dir in working_list:
-        #     if "__MACOSX" in dir.name:
-        #         continue
-        #     working_dir = dir
-        #     break
-        working_dir = Path(working_dir)
-        print("working_dir", working_dir)
-        link_title_dict, title_link_dict, link_content_dict, connections = load_data(working_dir, restrict=restrict)
-        nx_graph = build_nx_graph(connections, link_title_dict)
-        pageranks = nx.pagerank(nx_graph)
-
-        output_html = "all-output.html"
-        if get_subgraph and query_term:
-            nx_graph = query_subgraph(nx_graph, query_term, title_link_dict)
-            output_html = query_term + "-output.html"
-
-        pyvis_graph = build_and_display_pyvis_graph(nx_graph, link_title_dict, link_content_dict, node_shape_dict=pageranks)
-
-        pyvis_graph.show(output_html)
-        with open(output_html) as f:
-            data = f.read()
-        b64 = base64.b64encode(data.encode()).decode()  # some strings <-> bytes conversions necessary here
-        href = f'<a href="data:text/html;base64,{b64}">Download HTML File</a> (right-click and choose \"save as\")'
+    pyvis_graph.show(output_html)
+    with open(output_html) as f:
+        data = f.read()
+    b64 = base64.b64encode(data.encode()).decode()  # some strings <-> bytes conversions necessary here
+    href = f'<a href="data:text/html;base64,{b64}">Download HTML File</a> (right-click and choose \"save as\")'
 
 
