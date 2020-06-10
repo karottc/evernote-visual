@@ -12,6 +12,7 @@ import base64
 
 use_tag = False
 use_index = False
+exclude_tag = set()
 
 def load_data(working_dir, restrict=True):
     
@@ -35,6 +36,25 @@ def load_data(working_dir, restrict=True):
         except:
             pass
 
+        return mydict
+
+    def extract_evernote_title_tag_from_html(input_html):
+        html = get_html_content_from_html(input_html)
+
+        mydict = {}
+        try:
+            # print(html.find('meta'))
+            for item in html.find('meta'):
+                # print(item, item.attrs.get("name"))
+                if item.attrs.get("name") == "keywords":
+                    tag_list = item.attrs.get("content").split(",")
+                    for tag in tag_list:
+                        tag = tag.strip()
+                        if tag not in exclude_tag and not tag in mydict:
+                            mydict[tag] = tag
+        except:
+            pass
+        print(mydict)
         return mydict
     
     def load_toc_tsv(tsv): # if use applescript out the note title link pair file
@@ -108,7 +128,10 @@ def load_data(working_dir, restrict=True):
     
             link_content_dict[link] = get_html_content_from_html(note_file).text
             # print("link_content_dict", link_content_dict)
-            new_dict = extract_evernote_title_link_from_html(note_file)
+            if use_tag:
+                new_dict = extract_evernote_title_tag_from_html(note_file)
+            else:
+                new_dict = extract_evernote_title_link_from_html(note_file)
             if new_dict:
 
                 for k, v in new_dict.items():
@@ -197,6 +220,10 @@ st.title("Visualization of Notes")
 working_dir = st.sidebar.text_input("choose data path")
 restrict = not st.sidebar.checkbox("Show note outside the notebook")
 use_tag = st.sidebar.checkbox("use tag generate graph")
+if use_tag:
+    tmp_tag = st.sidebar.text_input("exclude tag list")
+    tag_list = tmp_tag.split(",")
+    exclude_tag = set(tag_list)
 use_index = st.sidebar.checkbox("use index outline")
 get_subgraph = st.sidebar.checkbox("Get subgraph")
 
