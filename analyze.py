@@ -141,7 +141,7 @@ def build_nx_graph(connections, link_title_dict):
 
 # build the pyvis graph
 def build_pyvis_graph(nx_graph, link_title_dict, link_content_dict, node_shape_dict=None):
-    graph = Network(notebook=True, directed=True)
+    graph = Network(notebook=True, directed=True, width=1200, height=1200)
     graph.from_nx(nx_graph)
     for node in graph.nodes:
         node['label'] = link_title_dict[node['id']]
@@ -212,15 +212,17 @@ if True:
         nx_graph = build_nx_graph(connections, link_title_dict)
         pageranks = nx.pagerank(nx_graph)
 
+        output_html = "all-output.html"
         if get_subgraph and query_term:
             nx_graph = query_subgraph(nx_graph, query_term, title_link_dict)
+            output_html = query_term + "-output.html"
 
         pyvis_graph = build_and_display_pyvis_graph(nx_graph, link_title_dict, link_content_dict, node_shape_dict=pageranks)
-        output_html = "output.html"
+
         pyvis_graph.show(output_html)
         with open(output_html) as f:
             data = f.read()
         b64 = base64.b64encode(data.encode()).decode()  # some strings <-> bytes conversions necessary here
         href = f'<a href="data:text/html;base64,{b64}">Download HTML File</a> (right-click and choose \"save as\")'
-        st.markdown(href, unsafe_allow_html=True)
+
 
