@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import time
+import datetime
 import streamlit as st
 from pathlib import Path
 from requests_html import HTML
@@ -13,6 +15,7 @@ import base64
 use_tag = False
 use_index = False
 exclude_tag = set()
+root_path = "/Users/cy/Downloads/book-mk/"
 
 def load_data(working_dir, restrict=True):
     
@@ -217,7 +220,7 @@ def query_subgraph(nx_graph, query_term, title_link_dict):
 
 st.title("Visualization of Notes")
 
-working_dir = st.sidebar.text_input("choose data path")
+working_dir_str = st.sidebar.text_input("choose data path", value=root_path)
 restrict = not st.sidebar.checkbox("Show note outside the notebook")
 use_tag = st.sidebar.checkbox("use tag generate graph")
 if use_tag:
@@ -227,21 +230,26 @@ if use_tag:
 use_index = st.sidebar.checkbox("use index outline")
 get_subgraph = st.sidebar.checkbox("Get subgraph")
 
-print(working_dir,restrict,use_tag,get_subgraph, use_index)
+print(working_dir_str,restrict,use_tag,get_subgraph, use_index)
 
 if get_subgraph:
     query_term = st.sidebar.text_input("Title to query")
 if st.sidebar.button('analyze now'):
-    working_dir = Path(working_dir)
+    working_dir = Path(working_dir_str)
     print("working_dir", working_dir)
     link_title_dict, title_link_dict, link_content_dict, connections = load_data(working_dir, restrict=restrict)
     nx_graph = build_nx_graph(connections, link_title_dict)
     pageranks = nx.pagerank(nx_graph)
 
-    output_html = "all-output.html"
+    now = datetime.datetime.fromtimestamp(time.time())
+    suffix = now.strftime("%Y%m%d%H%M")
+    output_html = "all"
     if get_subgraph and query_term:
         nx_graph = query_subgraph(nx_graph, query_term, title_link_dict)
-        output_html = query_term + "-output.html"
+        output_html = query_term
+    tmp_list = working_dir_str.split('/')
+    tmp_name = tmp_list[len(tmp_list) - 1]
+    output_html = root_path + output_html + "-" + tmp_name + "-output-" + suffix + ".html"
 
     pyvis_graph = build_and_display_pyvis_graph(nx_graph, link_title_dict, link_content_dict, node_shape_dict=pageranks)
 
