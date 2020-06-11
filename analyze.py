@@ -119,7 +119,7 @@ def generate_title_link_dict(link_title_dict):
 
 def build_databases(toc_dict, restrict=True):
 
-    link_title_dict = {}
+    link_title_dict = toc_dict.copy()
     link_content_dict = {}
     connections = []
 
@@ -208,10 +208,21 @@ def build_pyvis_graph(nx_graph, link_title_dict, link_content_dict, node_shape_d
     return graph
 
 
-def fuzzy_query(query_term, title_link_dict):
-    for k,v in title_link_dict.items():
-        if k.find(query_term)>=0:
-            return v
+def get_subgraph_node_list(query_term, title_link_dict, link_content_dict):
+    ''' 获取标题和内容都包含目标的节点，因为有些节点可能不连贯 '''
+    node_set = set()
+    for k, v in title_link_dict.items():
+        if k.lower().find(query_term.lower()) >= 0:
+            node_set.add(v)
+
+    for k, v in link_content_dict.items():
+        if v.lower().find(query_term.lower()) >= 0:
+            node_set.add(k)
+
+
+    print(query_term,"node list", node_set)
+    return node_set
+
 
 def build_and_display_pyvis_graph(nx_graph, link_title_dict, link_content_dict, node_shape_dict=None):
     pyvis_graph = build_pyvis_graph(nx_graph, link_title_dict, link_content_dict, node_shape_dict=node_shape_dict)
@@ -219,10 +230,12 @@ def build_and_display_pyvis_graph(nx_graph, link_title_dict, link_content_dict, 
     return pyvis_graph
 
 
-def query_subgraph(nx_graph, query_term, title_link_dict):
-
-    target_node = fuzzy_query(query_term, title_link_dict)
-    sub_nx_graph = nx_graph.subgraph(nx.node_connected_component(nx_graph.to_undirected(), target_node))
+def query_subgraph_all(nx_graph, query_term, title_link_dict, link_content_dict):
+    target_node_list = get_subgraph_node_list(query_term, title_link_dict, link_content_dict)
+    node_set = set()
+    for node in target_node_list:
+        node_set |= nx.node_connected_component(nx_graph.to_undirected(), node)   # 找到所有与目标节点相连的节点，避免漏掉
+    sub_nx_graph = nx_graph.subgraph(node_set)
     return sub_nx_graph
 
 
@@ -253,7 +266,7 @@ if st.sidebar.button('analyze now'):
     suffix = now.strftime("%Y%m%d%H%M")
     output_html = "all"
     if get_subgraph and query_term:
-        nx_graph = query_subgraph(nx_graph, query_term, title_link_dict)
+        nx_graph = query_subgraph_all(nx_graph, query_term, title_link_dict, link_content_dict)
         output_html = query_term
     tmp_list = working_dir_str.split('/')
     tmp_name = tmp_list[len(tmp_list) - 1]
