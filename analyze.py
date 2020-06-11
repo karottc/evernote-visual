@@ -124,24 +124,27 @@ def build_databases(toc_dict, restrict=True):
     connections = []
 
     # 修复使用index时，节点重复问题
-    tmp_dict = {}
-    for link, title in toc_dict.items():
-        title = title.replace('?', '_')
-        title = title.replace('/', '_')
-        note_file = working_dir / f"{title}.html"
-        tmp_dict.update(extract_evernote_title_link_from_html(note_file))
+    if use_index:
+        print("-----------start fix link---------------------")
+        tmp_dict = {}
+        for link, title in toc_dict.items():
+            title = title.replace('?', '_')
+            title = title.replace('/', '_')
+            note_file = working_dir / f"{title}.html"
+            tmp_dict.update(extract_evernote_title_link_from_html(note_file))
 
-    tmp_title_dict = generate_title_link_dict(tmp_dict)
+        tmp_title_dict = generate_title_link_dict(tmp_dict)
 
-    for link, title in toc_dict.items():
-        if title in tmp_title_dict:
-            link_title_dict[tmp_title_dict[title]] = title
-        else:
-            link_title_dict[link] = title
+        for link, title in toc_dict.items():
+            if title in tmp_title_dict:
+                link_title_dict[tmp_title_dict[title]] = title
+            else:
+                link_title_dict[link] = title
 
-    toc_dict = link_title_dict.copy()
+        toc_dict = link_title_dict.copy()
 
-    print("fix toc dict:", toc_dict)
+        print("fix toc dict:", toc_dict)
+        print("-----------fix link end---------------------")
 
     for link, title in toc_dict.items():
 
