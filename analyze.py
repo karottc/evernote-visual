@@ -17,7 +17,16 @@ use_tag = False
 use_index = False
 exclude_tag = set()
 root_path = "/Users/cy/Downloads/book-mk/"
-
+onlick_event = '''
+        //双击打开笔记
+        network.on("doubleClick", function (params) {
+            if ( params.nodes.length != 0) { // 双击的是节点
+                var _node = params.nodes[0];
+                // alert(_node);
+                window.open(_node, "_self");
+            }
+        });
+        '''
 
 def get_html_content_from_html(input_html):
     with open(input_html) as f:
@@ -197,7 +206,7 @@ def build_nx_graph(connections, link_title_dict):
 
 # build the pyvis graph
 def build_pyvis_graph(nx_graph, link_title_dict, link_content_dict, node_shape_dict=None):
-    graph = Network(notebook=True, directed=True, width=1200, height=1200)
+    graph = Network(notebook=True, directed=True, width=2000, height=2000)
     graph.from_nx(nx_graph)
     for node in graph.nodes:
         node['label'] = link_title_dict[node['id']]
@@ -226,7 +235,7 @@ def get_subgraph_node_list(query_term, title_link_dict, link_content_dict):
 
 def build_and_display_pyvis_graph(nx_graph, link_title_dict, link_content_dict, node_shape_dict=None):
     pyvis_graph = build_pyvis_graph(nx_graph, link_title_dict, link_content_dict, node_shape_dict=node_shape_dict)
-    pyvis_graph.show_buttons(filter_=['physics'])
+    # pyvis_graph.show_buttons(filter_=['physics', 'nodes'])
     return pyvis_graph
 
 
@@ -238,6 +247,20 @@ def query_subgraph_all(nx_graph, query_term, title_link_dict, link_content_dict)
     sub_nx_graph = nx_graph.subgraph(node_set)
     return sub_nx_graph
 
+def add_onclick_event(file_name):
+    ''' 对最后生成的网页增加点击事件，可以直接打开笔记 '''
+    f_in = open(file_name)
+    lines = f_in.readlines()
+    f_in.close()
+    result = ""
+    for line in lines:
+        result += line
+        if line.find("new vis.Network") > 0:
+            result += onlick_event
+
+    f_out = open(file_name, "w")
+    f_out.write(result)
+    f_out.close()
 
 st.title("Visualization of Notes")
 
@@ -275,6 +298,7 @@ if st.sidebar.button('analyze now'):
     pyvis_graph = build_and_display_pyvis_graph(nx_graph, link_title_dict, link_content_dict, node_shape_dict=pageranks)
 
     pyvis_graph.show(output_html)
+    add_onclick_event(output_html)
 
     with open(output_html) as f:
         data = f.read()
