@@ -206,7 +206,7 @@ def build_nx_graph(connections, link_title_dict):
 
 # build the pyvis graph
 def build_pyvis_graph(nx_graph, link_title_dict, link_content_dict, node_shape_dict=None):
-    graph = Network(notebook=True, directed=True, width=2000, height=2000)
+    graph = Network(notebook=True, directed=True, width=1000, height=1000)
     graph.from_nx(nx_graph)
     for node in graph.nodes:
         node['label'] = link_title_dict[node['id']]
@@ -235,7 +235,7 @@ def get_subgraph_node_list(query_term, title_link_dict, link_content_dict):
 
 def build_and_display_pyvis_graph(nx_graph, link_title_dict, link_content_dict, node_shape_dict=None):
     pyvis_graph = build_pyvis_graph(nx_graph, link_title_dict, link_content_dict, node_shape_dict=node_shape_dict)
-    # pyvis_graph.show_buttons(filter_=['physics', 'nodes'])
+    pyvis_graph.show_buttons(filter_=["layout"])
     return pyvis_graph
 
 
